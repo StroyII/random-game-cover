@@ -13,6 +13,8 @@ API_KEY = os.getenv("RAWG_API_KEY")
 API_URL = "https://api.rawg.io/api"
 PAGE_SIZE = 40
 FILENAME = "cover.png"
+BACKUPGAMENAME = "Yo-kai Watch Dance: Just Dance Special Version"
+BACKUPGAMEIMAGE = "https://static.wikia.nocookie.net/justdance/images/c/c3/Youkaiwatchdance.png"
 
 def getGamePage(url:str,key:str,page:int=1,numerByPage:int=1)->dict:
     """
@@ -52,16 +54,34 @@ def saveImagePng(image_url:str, filename:str, game_name:str):
 
     image.save("cover/"+filename, "PNG")
 
+def chooseRandomGame(max_try:int=20)->dict:
+    """
+    Function to choose a random game
+    """
+    
+    # Choose a random page in the api
+    numberOfGame = getGamePage(API_URL,API_KEY)["count"]
+    total_page = math.ceil(numberOfGame / PAGE_SIZE)
 
-# Choose a random page in the api
-numberOfGame = getGamePage(API_URL,API_KEY)["count"]
-total_page = math.ceil(numberOfGame / PAGE_SIZE)
-random_page = random.randint(1, total_page)
+    for i in range(max_try):
+        random_page = random.randint(1, total_page)
+        games = getGamePage(API_URL,API_KEY,random_page,PAGE_SIZE)["results"]
+
+        valid_games = [g for g in games if g.get("background_image")]
+
+        if valid_games:
+            return random.choice(valid_games)
+
+    return None
 
 # Fetch a random game in the page
-choosen_game = random.choice(getGamePage(API_URL,API_KEY,random_page,PAGE_SIZE)["results"])
-game_name = choosen_game["name"]
+choosen_game = chooseRandomGame(20)
 
-# Take the cover image and save it
-image_url = choosen_game["background_image"]
+if choosen_game:
+    game_name = choosen_game["name"]
+    image_url = choosen_game["background_image"]
+else:
+    game_name = BACKUPGAMENAME
+    image_url = BACKUPGAMEIMAGE
+    
 saveImagePng(image_url,FILENAME,game_name)
